@@ -46,6 +46,11 @@ while True:
 
     for card in property_cards:
         try:
+            # Extract image source
+            img_src = card.find('img', class_='bp-Homecard__Photo--image')['src']
+            if not img_src.startswith('http'):
+                img_src = f"https:{img_src}"
+            
             # Extract property details
             address = card.find('div', class_='bp-Homecard__Address').get_text(strip=True)
             price = card.find('span', class_='bp-Homecard__Price--value').get_text(strip=True)
@@ -55,7 +60,7 @@ while True:
             beds = stats.find('span', class_='bp-Homecard__Stats--beds').get_text(strip=True)
             baths = stats.find('span', class_='bp-Homecard__Stats--baths').get_text(strip=True)
             sqft = stats.find('span', class_='bp-Homecard__Stats--sqft').get_text(strip=True)
-            
+
             # Extract additional details if available
             key_facts = card.find('div', class_='KeyFactsExtension')
             if key_facts:
@@ -69,6 +74,7 @@ while True:
             
             # Add to properties list
             properties.append({
+                'Image': f'=IMAGE("{img_src}")',  # Excel formula to embed image
                 'Address': address,
                 'Price': price,
                 'Beds': beds,
@@ -94,7 +100,7 @@ while True:
 # Export to CSV
 csv_filename = 'redfin_properties.csv'
 with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
-    fieldnames = ['Address', 'Price', 'Beds', 'Baths', 'Square Feet', 'Lot Size', 'URL']
+    fieldnames = ['Image', 'Address', 'Price', 'Beds', 'Baths', 'Square Feet', 'Lot Size', 'URL']
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     
     writer.writeheader()
