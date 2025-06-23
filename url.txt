@@ -1,1 +1,0 @@
-https://www.redfin.com/county/1255/LA/Jefferson-Parish/filter/property-type=house+townhouse+multifamily,max-price=220k,min-beds=2,min-baths=1.5,min-sqft=1.2k-sqft,hoa=0
