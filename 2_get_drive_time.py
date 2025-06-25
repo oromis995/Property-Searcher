@@ -2,35 +2,21 @@ import csv
 import requests
 from datetime import datetime, timedelta
 
-def get_next_monday_8_20am():
-    today = datetime.now()
-    # If today is Monday and before 8:20am, use today
-    if today.weekday() == 0 and today.time() < datetime.strptime("08:20", "%H:%M").time():
-        return today.replace(hour=8, minute=20, second=0, microsecond=0)
-    # Otherwise find next Monday
-    days_ahead = (0 - today.weekday()) % 7  # 0 is Monday
-    if days_ahead == 0:  # Today is Monday but after 8:20am
-        days_ahead = 7
-    next_monday = today + timedelta(days=days_ahead)
-    return next_monday.replace(hour=8, minute=20, second=0, microsecond=0)
-
 def geocode_address(address):
-    """Convert address to coordinates using Nominatim"""
+    """Convert address to coordinates using ArcGIS"""
     try:
-        url = f"https://nominatim.openstreetmap.org/search?q={address}&format=json"
-        headers = {'User-Agent': 'Mozilla/5.0'}  # Nominatim requires user agent
-        response = requests.get(url, headers=headers).json()
-        if response:
-            return (float(response[0]['lat']), float(response[0]['lon']))
+        url = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates"
+        params = {
+            'f': 'json',
+            'singleLine': address,
+            'outFields': 'Match_addr,Addr_type',
+            'maxLocations': 1
+        }
+        response = requests.get(url, params=params).json()
         
-        # If first attempt fails, try replacing city with New Orleans
-        parts = address.split(',')
-        if len(parts) >= 2:
-            new_address = parts[0].strip() + ", New Orleans, LA" + (',' + ','.join(parts[2:]) if len(parts) > 2 else '')
-            url = f"https://nominatim.openstreetmap.org/search?q={new_address}&format=json"
-            response = requests.get(url, headers=headers).json()
-            if response:
-                return (float(response[0]['lat']), float(response[0]['lon']))
+        if response.get('candidates') and len(response['candidates']) > 0:
+            location = response['candidates'][0]['location']
+            return (location['y'], location['x'])  # ArcGIS returns (lat, lon) as (y, x)
         
         return None
     except Exception as e:
@@ -74,16 +60,16 @@ def calculate_free_drive_times(input_csv, output_csv):
         writer.writeheader()
         
         for row in reader:
-            origin = row['Address']
-            print("Processing: " + row['Address'])
+            # Construct the full address from separate components
+            origin = f"{row['Street']}, {row['City']}, {row['State']} {row['ZIP Code']}"
             origin_coords = geocode_address(origin)
             
             if origin_coords:
                 row['Coordinates'] = f"{origin_coords[0]}, {origin_coords[1]}"
                 route = get_drive_time(origin_coords, dest_coords)
                 if route:
-                    row['Drive Time (mins)'] = f"{route['duration_mins']} mins"
-                    row['Distance (miles)'] = f"{route['distance_miles']} miles"
+                    row['Drive Time (mins)'] = f"{route['duration_mins']}"
+                    row['Distance (miles)'] = f"{route['distance_miles']}"
                 else:
                     row['Drive Time (mins)'] = "Routing failed"
                     row['Distance (miles)'] = "Routing failed"
@@ -95,7 +81,7 @@ def calculate_free_drive_times(input_csv, output_csv):
             writer.writerow(row)
 
 if __name__ == "__main__":
-    input_filename = "redfin_properties.csv"  # Replace with your input file name
+    input_filename = "redfin_properties.csv"
     output_filename = "properties_with_drive_times.csv"
     calculate_free_drive_times(input_filename, output_filename)
     print(f"Drive time calculations complete. Results saved to {output_filename}")

@@ -42,7 +42,7 @@ for coord in df['Coordinates']:
     else:
         zone = "Missing coordinates"
     flood_zones.append(zone)
-    time.sleep(0.3)  # Respectful delay for the API
+    time.sleep(0.2)  # Respectful delay for the API
 
 # Save results
 df['Flood Zone'] = flood_zones
