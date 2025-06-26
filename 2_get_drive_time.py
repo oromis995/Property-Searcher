@@ -1,5 +1,6 @@
 import csv
 import requests
+import os
 from datetime import datetime, timedelta
 
 def geocode_address(address):
@@ -45,6 +46,20 @@ def get_drive_time(start_coords, end_coords):
         return None
 
 def calculate_free_drive_times(input_csv, output_csv):
+    # Check if output file already exists
+    existing_data = {}
+    if os.path.exists(output_csv):
+        with open(output_csv, mode='r') as existing_file:
+            reader = csv.DictReader(existing_file)
+            for row in reader:
+                # Use a unique identifier for each property (address in this case)
+                address_key = f"{row['Street']}, {row['City']}, {row['State']} {row['ZIP Code']}"
+                existing_data[address_key] = {
+                    'Coordinates': row.get('Coordinates', ''),
+                    'Drive Time (mins)': row.get('Drive Time (mins)', ''),
+                    'Distance (miles)': row.get('Distance (miles)', '')
+                }
+    
     # Geocode the destination once
     destination = "781 Lasalle St, New Orleans, LA 70112"
     dest_coords = geocode_address(destination)
@@ -62,6 +77,24 @@ def calculate_free_drive_times(input_csv, output_csv):
         for row in reader:
             # Construct the full address from separate components
             origin = f"{row['Street']}, {row['City']}, {row['State']} {row['ZIP Code']}"
+            address_key = origin
+            
+            # Check if we have existing data for this property
+            if address_key in existing_data and existing_data[address_key]['Coordinates']:
+                existing_row = existing_data[address_key]
+                if (existing_row['Drive Time (mins)'] and 
+                    existing_row['Drive Time (mins)'] not in ["Geocoding failed", "Routing failed"] and
+                    existing_row['Distance (miles)'] and 
+                    existing_row['Distance (miles)'] not in ["Geocoding failed", "Routing failed"]):
+                    
+                    # Use existing data
+                    row['Coordinates'] = existing_row['Coordinates']
+                    row['Drive Time (mins)'] = existing_row['Drive Time (mins)']
+                    row['Distance (miles)'] = existing_row['Distance (miles)']
+                    writer.writerow(row)
+                    continue
+            
+            # If no existing data or data was invalid, process new request
             origin_coords = geocode_address(origin)
             
             if origin_coords:
@@ -81,7 +114,7 @@ def calculate_free_drive_times(input_csv, output_csv):
             writer.writerow(row)
 
 if __name__ == "__main__":
-    input_filename = "redfin_properties.csv"
-    output_filename = "properties_with_drive_times.csv"
+    input_filename = "1_properties.csv"
+    output_filename = "2_properties_w_drive.csv"
     calculate_free_drive_times(input_filename, output_filename)
     print(f"Drive time calculations complete. Results saved to {output_filename}")

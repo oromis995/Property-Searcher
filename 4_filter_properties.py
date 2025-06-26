@@ -26,4 +26,4 @@ def filter_properties(input_file, output_file):
 
 
 # Usage example:
-filter_properties('properties_with_flood_zones.csv', 'filtered_properties.csv')
+filter_properties('3_properties_w_flood.csv', '4_filtered_properties.csv')

@@ -12,7 +12,7 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 }
 base_url = "https://www.redfin.com/county/1255/LA/Jefferson-Parish/filter/property-type=house+townhouse+multifamily,max-price=220k,min-beds=2,min-baths=1.5,min-sqft=1.2k-sqft,hoa=0"
-output_csv = 'redfin_properties.csv'
+output_csv = '1_properties.csv'
 photo_base_dir = 'Photos'
 
 # Create directories if they don't exist
